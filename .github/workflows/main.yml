@@ -20,7 +20,10 @@ on:
 
 env:
   AZURE_TENANT: ${{ github.event.inputs.tenant }}
-
+  
+permissions:
+  id-token: write
+  contents: read
 jobs:
   gather-azure-info:
     runs-on: ubuntu-latest
