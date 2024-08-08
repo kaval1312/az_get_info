@@ -1,0 +1,66 @@
+name: Azure Resource Information Retrieval
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenant:
+        description: 'Select the tenant'
+        required: true
+        type: choice
+        options:
+        - MPBBVC
+        - WLAWN
+        - ALCGL
+        - DRLTN
+        - ALCMT
+        - OXQRT
+        - SLMDR
+        - ALCSB
+        - Global
+
+env:
+  AZURE_TENANT: ${{ github.event.inputs.tenant }}
+
+jobs:
+  gather-azure-info:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets[format('{0}_AZURE_CREDENTIALS', env.AZURE_TENANT)] }}
+
+    - name: Set SBX_Subscriptions
+      if: env.AZURE_TENANT == 'ALCSB'
+      run: |
+        echo "SBX_SUBSCRIPTIONS=${{ secrets.SBX_SUBSCRIPTIONS }}" >> $GITHUB_ENV
+
+    - name: Get VNets Info
+      run: |
+        az account list --output table
+        echo "VNets Information:"
+        az network vnet list --output table
+
+    - name: Get Log Analytics Workspaces Info
+      run: |
+        echo "Log Analytics Workspaces Information:"
+        az monitor log-analytics workspace list --output table
+
+    - name: Get VMs Info
+      run: |
+        echo "Virtual Machines Information:"
+        az vm list --output table
+
+    - name: Output Results
+      run: |
+        echo "SBX_Subscriptions: $SBX_SUBSCRIPTIONS"
+        echo "VNets, Log Analytics Workspaces, and VMs information has been printed above."
+
+    - name: Azure Logout
+      run: |
+        az logout
+        az cache purge
+        az account clear
